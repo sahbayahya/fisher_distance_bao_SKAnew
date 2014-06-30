@@ -77,8 +77,7 @@ DOUBLE PRECISION FUNCTION da(z) ! proper distance in units of h^-1 Mpc.
   hh=xa(jlo+1)-xa(jlo)
   a=(xa(jlo+1)-x)/hh
   b=(x-xa(jlo))/hh
-  da=(a*za(jlo)+b*za(jlo+1)+((a**3-a)*z2a(jlo)+(b**3-b)*z2a(jlo+1))*(hh**2)/6.)
-  !print*, 'da', da
+  da=(a*za(jlo)+b*za(jlo+1)+((a**3-a)*z2a(jlo)+(b**3-b)*z2a(jlo+1))*(hh**2)/6.)/(H_0/100d0)
   return
 END FUNCTION Da
 !-----------------------------------------------------------------------------
@@ -93,8 +92,9 @@ DOUBLE PRECISION FUNCTION one_over_h(z)
   !ok0 = 0d0!1d0-om0-ode0-ob0
   fz =  (1d0 + z)**(3d0*(1d0 + w0+ w_a)) * exp(-3d0 * w_a *z/(1d0+ z))
   x=1d0/(1d0+z)
- wz = (w0 + w_a*z*x)
+wz = (w0 + w_a*z*x)
 ! one_over_h = 1d0/sqrt((om0+ob0)/x**3d0+ok0/x**2d0+or0/x**4d0+ode0/x**(3d0*(1d0+wz)))
-one_over_h = 1d0/sqrt((om0+ob0)/x**3d0+ok0/x**2d0+ ode0* fz)
+!one_over_h = 1d0/sqrt((om0+ob0)/x**3d0+ok0/x**2d0+ ode0* fz)
+ one_over_h = 1d0/sqrt(om0/x**3d0+ok0/x**2d0+or0/x**4d0+ode0/x**(3d0+3d0*wz))
   return
 END FUNCTION one_over_h

@@ -51,7 +51,6 @@ END SUBROUTINE volume
 DOUBLE PRECISION FUNCTION dvdz(z)
 ! dV/dz is differential comoving volume per steradian, in units of h^-3 Mpc^3
 ! Note h^-3!
-use cosmo
   IMPLICIT none
   DOUBLE PRECISION, intent(IN) :: z
   DOUBLE PRECISION :: one_over_h,da

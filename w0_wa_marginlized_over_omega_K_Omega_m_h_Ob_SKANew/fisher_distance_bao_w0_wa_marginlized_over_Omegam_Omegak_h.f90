@@ -23,38 +23,38 @@ PROGRAM Fisher_Distance
   double precision :: sigma_para,sigma_perp,sigma_silk=8.38d0 ! h^-1 Mpc
   double precision :: dlnk,mu,mu2,dmu,factor,wkmu,dummy,wdamp,Rmu
   double precision :: z,zin,beta,bias,g,dgdlna,sigma_z,delta_v,fz, w,dvdz
-  double precision :: zmin,zmax,area,Vsurvey,Vtot,ngal,dndz
+  double precision :: zmin,zmax,area,Vsurvey,Vtot,ngal,dndz,da
   character(len=128) :: filename
   integer :: n,i,j,ibin,nbins,ifile
-  external linear_pk,dgdlna,g,dvdz
+  external linear_pk,dgdlna,g,dvdz,da
   ! Specify three cosmological parameters for computing the growth factor
   ! and the angular diameter distance. 
   ! The data type has been defined in MODULE cosmo.
   !############################################
   
   !******************* PLANCK ********************************
- ! H_0 = 67d0
- ! c = 300000d0
- ! om0=0.3d0
- ! ok0 = 0.0d0
- ! ode0= 0.686d0
- ! ob0 = (0.0220d0/(H_0/100)**2)
- ! ok0 = 0d0! 1d0 - om0 -ob0-ode0
- ! w0=-1d0
+  H_0 = 67d0
+  c = 300000d0
+  om0=0.316d0
+  ok0 = 0.0d0
+  ode0= 0.686d0
+  ob0 = 0.049
+  ok0 = 0d0! 1d0 - om0 -ob0-ode0
+  w0=-1d0
  ! w = -1d0
- ! w_a = 0d0
+  w_a = 0d0
   
  ! ********* WMAP 3 ******************************************
-  H_0 = 73d0
-  c = 299999d0
-  om0=0.24d0
-  ok0 = 0.0d0
-  ob0 =(0.0223d0/(H_0/100d0)**2)
-  print'(1A20,1F9.5)', 'ob0 = ', ob0
-  ode0= 1d0 - ok0 -ob0 - om0 
-  print '(1A20,1F9.5)', 'ode0 = ', ode0
-  w0=-1d0
-  w_a = 0d0
+!  H_0 = 73d0
+!  c = 299999d0
+!  om0=0.24d0
+!  ok0 = 0.0d0
+!  ob0 =(0.0223d0/(H_0/100d0)**2)
+!  print'(1A20,1F9.5)', 'ob0 = ', ob0
+!  ode0= 1d0 - ok0 -ob0 - om0 
+!  print '(1A20,1F9.5)', 'ode0 = ', ode0
+!  w0=-1d0
+!  w_a = 0d0
   CALL setup_growth ! tabulate the growth factor
   CALL setup_da       ! tabulate the angular diameter distance
   ! ask for survey specific parameters
@@ -65,9 +65,9 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
   open(2,file=filename,status='unknown')
   
 !=============  Read in linear P(k) ===================================
-  filename='wmap5baosn_max_likelihood_matterpower_at_z=30.dat' 
-  n=896  ! no. of lines in the file
-  zin=30d0 ! redshift of the input power spectrum
+  filename='test_matterpower_z=1.dat' 
+  n=128  ! no. of lines in the file
+  zin=1d0 ! redshift of the input power spectrum
   CALL open_linearpk(filename,n) ! This fuction just to interpolate the values in the filename
 !================================================================  
   ! loop over redshift bins
@@ -82,15 +82,16 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
   
   do ibin=1,100
      read(2,*,end=10)area,zmin,zmax,dndz,bias,kmax_ov_h,kmin_ov_h,delta_v ! uncomment for Euclid
-     !read(2,*,end=10)area,zmin,zmax,dndz,bias,kmax_ov_h,delta_v ! Uncomment for SKA
+    ! read(2,*,end=10)area,zmin,zmax,dndz,bias,kmax_ov_h,delta_v ! Uncomment for SKA
      nbins=nbins+1
     CALL volume(zmin,zmax,area,Vsurvey)
      z=0.5d0*(zmin+zmax)
      beta=(1d0+dgdlna(z)/g(z))/bias
      w = w0 + w_a*(z/(1d0+z))
      ngal=dndz !  Uncomment for  Euclid
-   ! ngal=dndz/((3.14159d0/180d0)**2*dvdz(z)) ! Uncomment for SKA
+  !  ngal=dndz/((3.14159d0/180d0)**2*dvdz(z)) ! Uncomment for SKA
      Vtot=Vtot+Vsurvey
+     print*, 'da', da(z)
    ! Vsurvey =  13.38d0*10d0**9d0/(H_0/100d0)**3d0 ! Phil 
      fz =(1d0 + z)**(3d0*(1d0 + w0+ w_a)) * exp(-3d0 * w_a *(z/(1d0+ z)))
      sigma_z= (1d0+z)*(delta_v/2.998d5) &
@@ -105,7 +106,6 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
      k_ov_h=k0_ov_h
      fis=0d0
      !================ loop over k ===================================
-     
      do while (k_ov_h<=kmax_ov_h)
         read(11,*)k_ov_h,dummy
         dlnk=dlog(k_ov_h)-dlog(k0_ov_h)
@@ -121,7 +121,7 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
               *bias**2d0*(1d0+beta*mu2)**2d0
            ! P(k) the galaxy power spectrum  in units of h^-3 Mpc^3  
            pk=linear_pk(k_ov_h)*(g(z)/g(zin)*(1d0+zin)/(1d0+z))**2d0 &
-               *bias**2d0*(1d0+beta*mu2)**2d0
+               *bias**2d0!*(1d0+beta*mu2)**2d0
               ! print*, p02
             !P01  P(k) at k=0.1 h Mpc^-1  in units of h^-3 Mpc^3  
               p01=linear_pk(0.1d0)*(g(z)/g(zin)*(1d0+zin)/(1d0+z))**2d0&
@@ -144,8 +144,8 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
      !  write(5,*) k_ov_h, pk! , 1d0/ngal
      !  open(5,file='gz.txt' ,status='unknown')
      !  write(5,*)  z, g(z)
-    !	open(5,file='cosmic_v_k_Euclid.txt' ,status='unknown')
-   ! 	write(5,*) k0_ov_h , k_ov_h, pk
+    	open(5,file='cosmic_v_k_Euclid.txt' ,status='unknown')
+    	write(5,*) k0_ov_h , k_ov_h, pk!
     ! 	write(5,*) ((1d0/P02)*dvdz(z) ), (dndz*((3.14159d0/180d0)**2*dvdz(z)))
     ! 	print*, 1d0/P02, dvdz(z)
     ! 	write(5,*) z, ((1d0/P02)*dvdz(z) ), (dndz*((3.14159d0/180d0)**2*dvdz(z)))
@@ -160,7 +160,6 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
       print*,'Vsur =',Vsurvey,' h^-3 Mpc^3'
       print*,'ngal =',ngal,'h^3 Mpc^-3'
       print*,'1/ngal =',1/ngal,'h^-3 Mpc^3'
-      !  print*, 'fis = ', fis
       print'(1A7,1F8.5)','Bias =',bias
       print'(1A7,1F8.5)','Beta =',beta
       print'(1A7,1F8.5)','g(z) =',g(z)

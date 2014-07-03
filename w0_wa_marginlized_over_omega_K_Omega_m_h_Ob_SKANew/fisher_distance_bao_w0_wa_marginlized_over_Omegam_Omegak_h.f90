@@ -12,14 +12,15 @@ PROGRAM Fisher_Distance
   IMPLICIT none
   integer :: npara=2 ! # of parameters
   double precision, dimension(2)   :: der
-  double precision, dimension(2,2) :: cov,fis,fistot
+  double precision, dimension(2,2) :: cov,fis,fistot,fistest
   double precision, dimension(6,6) :: fis3x3, fis6x6
   integer,          dimension(2)   :: work
   double precision :: sigma0=12.4d0*0.817d0/0.9d0 
   ! non-linearity scale in units of h Mpc^-1, rescaled by WMAP5's sigma8 value (0.817)
   double precision :: BAO_AMP=0.5817d0 ! A_0 in Seo&Eisenstein
-  double precision :: kmax_ov_h,k_ov_h,k0_ov_h, kmin_ov_h ! h Mpc^-1
-  double precision :: linear_pk,pk,p02,p01
+  double precision :: kmax_ov_h,k_ov_h,k0_ov_h, kmin_ov_h, k0_new, k_new! h Mpc^-1
+  double precision :: linear_pk,pk,p02,p01,Pb
+ double precision :: wdamp_perp, wdamp_para, wdamp_silk, wdamp_factor, wdamp_sinterm
   double precision :: sigma_para,sigma_perp,sigma_silk=8.38d0 ! h^-1 Mpc
   double precision :: dlnk,mu,mu2,dmu,factor,wkmu,dummy,wdamp,Rmu
   double precision :: z,zin,beta,bias,g,dgdlna,sigma_z,delta_v,fz, w,dvdz
@@ -65,9 +66,10 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
   open(2,file=filename,status='unknown')
   
 !=============  Read in linear P(k) ===================================
-  filename='test_matterpower_z=1.dat' 
-  n=128  ! no. of lines in the file
-  zin=1d0 ! redshift of the input power spectrum
+ ! filename='linear_matterpower_1.dat' 
+ filename= 'wmap5baosn_max_likelihood_matterpower_at_z=30.dat'
+  n=869 ! no. of lines in the file
+  zin=30d0 ! redshift of the input power spectrum
   CALL open_linearpk(filename,n) ! This fuction just to interpolate the values in the filename
 !================================================================  
   ! loop over redshift bins
@@ -89,7 +91,7 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
      beta=(1d0+dgdlna(z)/g(z))/bias
      w = w0 + w_a*(z/(1d0+z))
      ngal=dndz !  Uncomment for  Euclid
-  !  ngal=dndz/((3.14159d0/180d0)**2*dvdz(z)) ! Uncomment for SKA
+    !ngal=dndz/((3.14159d0/180d0)**2*dvdz(z)) ! Uncomment for SKA
      Vtot=Vtot+Vsurvey
      print*, 'da', da(z)
    ! Vsurvey =  13.38d0*10d0**9d0/(H_0/100d0)**3d0 ! Phil 
@@ -98,6 +100,8 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
           *((c/H_0)/dsqrt((om0+ob0)*(1d0+z)**3d0+ok0* (1d0+z)**2d0+ ode0* fz)) ! in units of h^-1 Mpc
      sigma_perp=sigma0*g(z)/(1d0+z) ! in units of h^-1 Mpc
      sigma_para=sigma0*g(z)/(1d0+z)*(2d0+dgdlna(z)/g(z)) ! in units of h^-1 Mpc
+    !    open(101,file='nz_fz_Dz_test_rms=73.txt' ,status='unknown')
+   !	write(101,*) z,ngal, (1d0+dgdlna(z)/g(z)), g(z)/(1d0+z)
      !
    !=================  computing the Fisher matrix... =================================
      
@@ -105,50 +109,67 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
      read(11,*)k0_ov_h,dummy
      k_ov_h=k0_ov_h
      fis=0d0
+     fistest= 0d0
      !================ loop over k ===================================
      do while (k_ov_h<=kmax_ov_h)
         read(11,*)k_ov_h,dummy
-        dlnk=dlog(k_ov_h)-dlog(k0_ov_h)
+
+        !dlnk=dlog(k_ov_h)-dlog(k0_ov_h)
+          k0_new=6.8492999999999996E-005 
+         k_new =9.5589999999999998E-005
+         dlnk=dlog(k_new)-dlog(k0_new) !uncomment to use with Plank's parameters 
         !print*, 'dlnk', dlnk
         factor=(k_ov_h)**3d0*dlnk/(2.d0 *2d0 * 2d0 *3.1415926535d0**2d0) ! h^3 Mpc^-3
         !=========== loop over mu..========================
          mu=0d0
         dmu=1d-3
         do while (mu<=1d0)
-           mu2=mu*mu
+           mu2= mu*mu
            ! P02 is P(k) at k=0.2 h Mpc^-1 in unitys of h^-3 Mpc^3
            p02=linear_pk(0.2d0)*(g(z)/g(zin)*(1d0+zin)/(1d0+z))**2d0 &
               *bias**2d0*(1d0+beta*mu2)**2d0
            ! P(k) the galaxy power spectrum  in units of h^-3 Mpc^3  
            pk=linear_pk(k_ov_h)*(g(z)/g(zin)*(1d0+zin)/(1d0+z))**2d0 &
-               *bias**2d0!*(1d0+beta*mu2)**2d0
+               *bias**2d0*(1d0+beta*mu2)**2d0
               ! print*, p02
             !P01  P(k) at k=0.1 h Mpc^-1  in units of h^-3 Mpc^3  
-              p01=linear_pk(0.1d0)*(g(z)/g(zin)*(1d0+zin)/(1d0+z))**2d0&
-                *bias**2d0*(1d0+beta*mu2)**2d0
+              p01=linear_pk(k_ov_h)*(g(z)/g(zin)*(1d0+zin)/(1d0+z))**2d0&
+                *bias**2d0!*(1d0+beta*mu2)**2d0
            !==========================================     
            wkmu=Vsurvey*(ngal*p02/(1d0+ngal*pk))**2d0
            wdamp=exp(-(k_ov_h*sigma_z)**2d0*mu2) & 
                 *exp(-(k_ov_h*sigma_perp)**2d0*(1d0-mu**2d0)) & 
                 *exp(-(k_ov_h*sigma_para)**2d0*mu**2d0) &
                 *exp(-2d0*(k_ov_h*sigma_silk)**1.4d0)
+            wdamp_perp = exp(-(k_ov_h*sigma_perp)**2d0*(1d0-mu**2d0))
+            wdamp_para =exp(-(k_ov_h*sigma_para)**2d0*mu**2d0)
+            wdamp_silk = exp(-2d0*(k_ov_h*sigma_silk)**1.4d0)
+            wdamp_factor = dsqrt(2d0 *3.1415926535d0**2d0) * BAO_AMP *  p02
+            wdamp_sinterm = ( dsin(k_ov_h *150d0)/(k_ov_h*150d0))
+           Pb= wdamp_factor *  wdamp_sinterm * wdamp_perp  &
+           *  wdamp_para *  wdamp_silk
            der(1)=(1d0-mu2) ! dlnPkdlnDa
            der(2)=(-mu2) ! dlnPkdlnH
            do i=1,npara
+               fistest=factor *  Vsurvey*(ngal*p01/(1d0+ngal*p01))**2d0
                fis(i,:)= fis(i,:) + factor*wkmu*der(i)*der(:)*dmu &
-                 *(8d0*3.1415926535d0**2d0 *BAO_AMP**2d0)*wdamp ! factor*wkmu!
+                *(8d0*3.1415926535d0**2d0 *BAO_AMP**2d0)*wdamp ! factor*wkmu!
            enddo
            mu=mu+dmu
         enddo
-     !  open(5,file='Pk_Euclid.txt' ,status='unknown')
-     !  write(5,*) k_ov_h, pk! , 1d0/ngal
+      ! open(5,file='Pk_Euclid_testPlank.txt' ,status='unknown')
+   !    write(5,*) k_ov_h, pk! , 1d0/ngal
      !  open(5,file='gz.txt' ,status='unknown')
      !  write(5,*)  z, g(z)
-    	open(5,file='cosmic_v_k_Euclid.txt' ,status='unknown')
-    	write(5,*) k0_ov_h , k_ov_h, pk!
+    !	open(100,file='cosmic_v_k_Euclid_fis_test.txt' ,status='unknown')
+    !	write(100,*) k_ov_h,  dsqrt(1d0/fistest(1,1))!
     ! 	write(5,*) ((1d0/P02)*dvdz(z) ), (dndz*((3.14159d0/180d0)**2*dvdz(z)))
     ! 	print*, 1d0/P02, dvdz(z)
     ! 	write(5,*) z, ((1d0/P02)*dvdz(z) ), (dndz*((3.14159d0/180d0)**2*dvdz(z)))
+    !open(5,file='Pb_vs_k_testz=1.txt' ,status='unknown')
+   ! write(5,*) k_ov_h , Pb
+   ! open(150,file='wdamps_testz=1.txt' ,status='unknown')
+   ! write(150,*) k_ov_h , wdamp_perp, wdamp_para, wdamp_silk, wdamp_factor, wdamp_sinterm
         k0_ov_h=k_ov_h
       	enddo
       	fistot=fistot+fis
@@ -210,10 +231,10 @@ SUBROUTINE report_result(z,bias,npara,fis)
   err_lnh=sqrt(cov(2,2))
   err_lnR=err_lnda*sqrt((1d0-r12**2d0) &
        /(1d0+2d0*r12*err_lnda/err_lnh+(err_lnda/err_lnh)**2d0))
-!open(12,file='Fisher_70mJy_diff_14bins_S3.txt' ,status='unknown')
-!  write(12,'(4F18.5)') err_lnda,err_lnh,err_lnR
-! open(13,file='output_70mJy_diff_14bins_S3.txt', status='unknown')
-! write(13,'(6F18.5)') z, err_lnda*1d2,err_lnh*1d2,err_lnR*1d2, beta
+open(12,file='Fisher_7point3mJy_diff_14bins_S3.txt' ,status='unknown')
+  write(12,'(4F18.5)') err_lnda,err_lnh,err_lnR
+ open(13,file='output_7point3mJy_diff_14bins_S3.txt', status='unknown')
+ write(13,'(6F18.5)') z, err_lnda*1d2,err_lnh*1d2,err_lnR*1d2, beta
   print'(1A15,1F9.5)','Err[lnDa](%) =',err_lnda*1d2
   print'(1A15,1F9.5)','Err[lnH](%)  =',err_lnh*1d2
   print'(1A15,1F9.5)','r(lnDa,lnH)  =',r12

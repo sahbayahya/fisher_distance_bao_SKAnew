@@ -60,16 +60,16 @@ PROGRAM Fisher_Distance
   CALL setup_da       ! tabulate the angular diameter distance
   ! ask for survey specific parameters
 !==============Enter the File name ================================== 
-!filename = 'number_sax3_7point3_mJy_SKANew_S3.txt'
+filename = 'number_sax3_7point3_mJy_SKANew_S3.txt'
 !filename='number_7point3_z=1.txt'!
-filename= 'number_EuclidmJy_ref_z=1.txt'
+!filename= 'number_EuclidmJy_ref_z=1.txt'
   open(2,file=filename,status='unknown')
   
 !=============  Read in linear P(k) ===================================
- ! filename='linear_matterpower_1.dat' 
- filename= 'wmap5baosn_max_likelihood_matterpower_at_z=30.dat'
+  filename='linear_matterpower_1.dat' 
+! filename= 'wmap5baosn_max_likelihood_matterpower_at_z=30.dat'
   n=869 ! no. of lines in the file
-  zin=30d0 ! redshift of the input power spectrum
+  zin=1d0 ! redshift of the input power spectrum
   CALL open_linearpk(filename,n) ! This fuction just to interpolate the values in the filename
 !================================================================  
   ! loop over redshift bins
@@ -166,8 +166,8 @@ filename= 'number_EuclidmJy_ref_z=1.txt'
     ! 	write(5,*) ((1d0/P02)*dvdz(z) ), (dndz*((3.14159d0/180d0)**2*dvdz(z)))
     ! 	print*, 1d0/P02, dvdz(z)
     ! 	write(5,*) z, ((1d0/P02)*dvdz(z) ), (dndz*((3.14159d0/180d0)**2*dvdz(z)))
-    !open(5,file='Pb_vs_k_testz=1.txt' ,status='unknown')
-   ! write(5,*) k_ov_h , Pb
+    open(5,file='Pb_vs_k_testz=1.txt' ,status='unknown')
+    write(5,*) k_ov_h , Pb
    ! open(150,file='wdamps_testz=1.txt' ,status='unknown')
    ! write(150,*) k_ov_h , wdamp_perp, wdamp_para, wdamp_silk, wdamp_factor, wdamp_sinterm
         k0_ov_h=k_ov_h

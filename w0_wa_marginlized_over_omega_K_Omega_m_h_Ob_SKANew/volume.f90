@@ -42,7 +42,6 @@ SUBROUTINE volume(zmin,zmax,area,vol)
   DOUBLE PRECISION :: dvdz,rombint,tol=1d-7
   EXTERNAL dvdz
   vol=rombint(dvdz,zmin,zmax,tol)
- 
   vol=area*(3.14159d0/180d0)**2.*vol
  print*, 'volume', vol
   return

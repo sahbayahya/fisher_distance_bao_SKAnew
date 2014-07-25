@@ -34,6 +34,7 @@ def H(z):
 #print D(z)
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
+yticks = [0, 0.2, 0.5, 1, 2,5 , 10,20]
 ax.set_yscale('log')
 ax.plot(z0, Err_lnda0,color='blue',linewidth=1.5, linestyle="--", label="$0  \mu$Jy")
 ax.plot(z3,  Err_lnda3 , color = 'red',linewidth=1.5, linestyle="--", label="$3 \mu$Jy")
@@ -66,7 +67,6 @@ plt.xticks(xticks,[r'$0$', r'$0.3$',r'$0.6$', r'$0.9$',r'$1.2$',r'$1.5$',r'$1.8$
 ax.get_yaxis().set_major_formatter(tic.ScalarFormatter())
 ax.yaxis.set_major_formatter(tic.FormatStrFormatter('%0.1f'))
 #ax.yaxis.set_major_formatter(tic.FuncFormatter(lambda x, pos: str(int(round(x)))))
-yticks = [0, 0.2, 0.5, 1, 2,5 , 10,20]
 plt.yticks(yticks,[r'$0$',r'$0.2$', r'$0.5$',r'$1$', r'$ 2$',r'$5$',r'$10$',r'$20$' ])
 plt.ylim(0.1,  20)
 #plt.xlabel(r"$ { \rm redshift} (z)$")

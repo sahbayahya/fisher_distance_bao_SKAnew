@@ -42,7 +42,6 @@ SUBROUTINE volume(zmin,zmax,area,vol)
   DOUBLE PRECISION :: dvdz,rombint,tol=1d-7
   EXTERNAL dvdz
   vol=rombint(dvdz,zmin,zmax,tol)
- 
   vol=area*(3.14159d0/180d0)**2.*vol
  print*, 'volume', vol
   return
@@ -51,10 +50,11 @@ END SUBROUTINE volume
 DOUBLE PRECISION FUNCTION dvdz(z)
 ! dV/dz is differential comoving volume per steradian, in units of h^-3 Mpc^3
 ! Note h^-3!
+use cosmo
   IMPLICIT none
   DOUBLE PRECISION, intent(IN) :: z
   DOUBLE PRECISION :: one_over_h,da
-  dvdz = (1d0+z)**2d0*da(z)**2d0*((c/H_0)*one_over_h(z))
+  dvdz =da(z)**2d0/(1d0+z)**2d0*((c/H_0)*one_over_h(z))
  ! print*, 'da', da(z)
   return
 END FUNCTION dvdz
